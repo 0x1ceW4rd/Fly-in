@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -17,11 +17,10 @@ class Zone(BaseModel):
     connections: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     def __repr__(self) -> str:
-        connected_zones = list(self.connections.keys()) if self.connections else []
         
         return (
             f"Zone('{self.name}', type={self.zone_type.value}, "
-            f"max_drones={self.max_drones}, links={connected_zones})"
+            f"max_drones={self.max_drones}, links={self.connections})"
         )
 
 class Graph:
@@ -71,7 +70,7 @@ class Parser:
 
             for data in zdata.split():
                 if "color" in data:
-                    zcolor = data.split('=')[1]
+                    zcolor = data.split('=')[1].lower()
 
                 elif "max_drones" in data:
                     zmax_drones = int(data.split('=')[1])
@@ -79,7 +78,7 @@ class Parser:
                         raise(ValueError("max drones cant be negative"))
 
                 elif "zone" in data:
-                    zzone_type = data.split('=')[1]
+                    zzone_type = data.split('=')[1].lower()
                     if zzone_type == "normal":
                         zzone_type = ZoneTypes.NORMAL
 
