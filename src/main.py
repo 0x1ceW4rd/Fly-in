@@ -1,15 +1,8 @@
 from parser import Parser, ZoneTypes, Graph, Zone
 from argparse import ArgumentParser, Namespace
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import heapq
 
-
-class Drone:
-    def __init__(self, id, path):
-        self.id: int = id
-        self.path = path 
-
-from typing import Dict, List, Tuple
 
 class ReservationTable:
     def __init__(self, graph: Graph):
@@ -68,12 +61,13 @@ class ReservationTable:
 
 
 class Pathfinder:
-    def __init__(self, graph: Graph):
+    def __init__(self, graph: Graph, res_table: ReservationTable):
         self.graph = graph
         self.zone_value = {ZoneTypes.NORMAL: 1,
                            ZoneTypes.RESTRICTED: 2,
                            ZoneTypes.PRIORITY: 1,
                            ZoneTypes.BLOCKED: float('inf')}
+        self.res_table = res_table
 
     def the_algo(self) -> List[str]:
         graph = self.graph
@@ -81,7 +75,7 @@ class Pathfinder:
         p_queue = [(0, 0, graph.start_hub.name, [graph.start_hub.name])]
         heapq.heapify(p_queue)
 
-        d_tracker = {graph.start_hub.name: (0, 0)}
+        d_tracker = {(graph.start_hub.name, 0): (0, 0)}
 
         while p_queue:
             curr = heapq.heappop(p_queue)
@@ -91,15 +85,35 @@ class Pathfinder:
                 return curr_path
 
             curr_state = (curr_cost, curr_priority_count)
-            if d_tracker[curr_zone_name] < curr_state:
+            if d_tracker.get((curr_zone_name, curr_cost), (float('inf'), 0)) < curr_state:
                 continue
             else:
-                d_tracker[curr_zone_name] = curr_state
+                d_tracker[curr_zone_name, curr_cost] = curr_state
+
+
+            if self.res_table.ismax_drones(graph.zones[curr_zone_name], curr_cost + 1):
+                if d_tracker.get((curr_zone_name, curr_cost + 1), (float('inf'), 0)) > (curr_cost + 1, curr_priority_count):
+                    d_tracker[(curr_zone_name, curr_cost + 1)] = (curr_cost + 1, curr_priority_count)
+                    heapq.heappush(p_queue, (curr_cost + 1, curr_priority_count, curr_zone_name, curr_path + [curr_zone_name]))
+                
+
+
             
             for neighbor in graph.zones[curr_zone_name].connections:
 
                 neighbor_zone = graph.zones[neighbor]
                 if neighbor_zone.zone_type == ZoneTypes.BLOCKED:
+                    continue
+                if not self.res_table.ismax_link_capacity(graph.zones[curr_zone_name], neighbor_zone, curr_cost + 1):
+                    continue
+
+                if neighbor_zone.zone_type == ZoneTypes.RESTRICTED:
+                    if not self.res_table.ismax_drones(neighbor_zone, curr_cost + 1):
+                        continue
+                    if not self.res_table.ismax_drones(neighbor_zone, curr_cost + 2):
+                        continue
+
+                if not self.res_table.ismax_drones(neighbor_zone, curr_cost + 1):
                     continue
 
                 is_priority = 1 if neighbor_zone.zone_type == ZoneTypes.PRIORITY else 0
@@ -107,10 +121,11 @@ class Pathfinder:
                 new_cost = curr_cost + self.zone_value[neighbor_zone.zone_type]
 
                 n_state = (new_cost, new_priority_count)
-                old_state = d_tracker.get(neighbor_zone.name, (float('inf'), 0))
+                old_state = d_tracker.get((neighbor_zone.name, new_cost), (float('inf'), 0))
+
 
                 if n_state < old_state:
-                    d_tracker[neighbor_zone.name] = n_state 
+                    d_tracker[(neighbor_zone.name, new_cost)] = n_state 
                     new_path = curr_path + [neighbor_zone.name]
                     heapq.heappush(p_queue, (new_cost, new_priority_count, neighbor_zone.name, new_path))
         
@@ -129,10 +144,14 @@ def main() -> None:
         parser = Parser(map)
         graph = parser.maping()
 
-        p = Pathfinder(graph)
+        res_table = ReservationTable(graph)
+        path_finder = Pathfinder(graph, res_table)
 
-        print(p.the_algo())
-        
+        for i in range(graph.nb_drones):
+            route = path_finder.the_algo()
+            print(f"Drone-{i+1} -> {route}")
+            print()
+            res_table.book_path(route)
 
     except Exception as e:
         print(e)

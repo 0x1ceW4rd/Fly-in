@@ -25,7 +25,7 @@ class Zone(BaseModel):
 
 class Graph:
     def __init__(self, np_drones):
-        self.np_drones = np_drones
+        self.nb_drones = np_drones
         self.start_hub: Zone
         self.zones: Dict[str, Zone] = dict()
         self.end_hub: Zone
