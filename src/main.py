@@ -177,7 +177,7 @@ def main() -> None:
             res_table.book_path(route)
 
         vis_type = args.vis_type
-        visualizer = Visualizer(vis_type, torok_len, torok)
+        visualizer = Visualizer(vis_type, torok_len, torok, graph)
         visualizer.visualise()
 
     except Exception as e:
