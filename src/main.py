@@ -23,12 +23,13 @@ class ReservationTable:
         numofdrones = self.zones.get(zone.name, {}).get(turn, 0)
         return numofdrones < zone.max_drones
 
-    def ismax_link_capacity(self, from_zone: Zone, to_zone: Zone, turn: int) -> bool:
+    def ismax_link_capacity(self, from_zone: Zone,
+                            to_zone: Zone, turn: int) -> bool:
         link_key = (from_zone.name, to_zone.name)
         numofdrones = self.links.get(link_key, {}).get(turn, 0)
         max_capacity = from_zone.connections[to_zone.name]
 
-        return numofdrones < max_capacity
+        return bool(numofdrones < max_capacity)
 
     def book_path(self, path: List[str]) -> None:
         current_turn = 0
@@ -66,8 +67,8 @@ class Pathfinder:
 
     def the_algo(self) -> List[str]:
         graph = self.graph
-
-        p_queue = [(0, 0, graph.start_hub.name, [graph.start_hub.name])]
+        sta = graph.start_hub.name
+        p_queue: List[Tuple[int, int, str, List[str]]] = [(0, 0, sta, [sta])]
         heapq.heapify(p_queue)
 
         d_tracker = {(graph.start_hub.name, 0): (0, 0)}
@@ -88,8 +89,10 @@ class Pathfinder:
             else:
                 d_tracker[curr_zone_name, curr_cost] = curr_state
 
-            if self.res_table.ismax_drones(graph.zones[curr_zone_name], curr_cost + 1):
-                if d_tracker.get((curr_zone_name, curr_cost + 1), (float("inf"), 0)) > (
+            if self.res_table.ismax_drones(graph.zones[curr_zone_name],
+                                           curr_cost + 1):
+                if d_tracker.get((curr_zone_name, curr_cost + 1),
+                                 (float("inf"), 0)) > (
                     curr_cost + 1,
                     curr_priority_count,
                 ):
@@ -117,34 +120,36 @@ class Pathfinder:
                 ):
                     continue
 
-                if not self.res_table.ismax_drones(neighbor_zone, curr_cost + 1):
+                if not self.res_table.ismax_drones(neighbor_zone,
+                                                   curr_cost + 1):
                     continue
-                
+
                 if neighbor_zone.zone_type == ZoneTypes.RESTRICTED:
-                    if not self.res_table.ismax_drones(neighbor_zone, curr_cost + 2):
+                    if not self.res_table.ismax_drones(neighbor_zone,
+                                                       curr_cost + 2):
                         continue
 
-                
-
-                is_priority = 1 if neighbor_zone.zone_type == ZoneTypes.PRIORITY else 0
+                a = ZoneTypes.PRIORITY
+                is_priority = (1 if neighbor_zone.zone_type == a else 0)
                 new_priority_count = curr_priority_count - is_priority
                 new_cost = curr_cost + self.zone_value[neighbor_zone.zone_type]
 
-                n_state = (new_cost, new_priority_count)
+                n_state = (int(new_cost), new_priority_count)
                 old_state = d_tracker.get(
-                    (neighbor_zone.name, new_cost), (float("inf"), 0)
+                    (neighbor_zone.name, int(new_cost)), (float("inf"), 0)
                 )
 
                 if n_state < old_state:
-                    d_tracker[(neighbor_zone.name, new_cost)] = n_state
+                    d_tracker[(neighbor_zone.name, int(new_cost))] = n_state
                     duration = (
-                        2 if neighbor_zone.zone_type == ZoneTypes.RESTRICTED else 1
+                        2 if neighbor_zone.zone_type == ZoneTypes.RESTRICTED
+                        else 1
                     )
                     new_path = curr_path + ([neighbor_zone.name] * duration)
-                    heapq.heappush(
-                        p_queue,
-                        (new_cost, new_priority_count, neighbor_zone.name, new_path),
-                    )
+                    heapq.heappush(p_queue,
+                                   (int(new_cost), new_priority_count,
+                                    neighbor_zone.name,
+                                    new_path))
 
         raise ValueError("No valid path exists between start and end zones")
 

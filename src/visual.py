@@ -5,7 +5,7 @@ class Visualizer:
         self.nb_drones = len(routes)
         self.max_turns = max(routes_len)
 
-    def visualise(self):
+    def visualise(self) -> None:
         vis_type = self.vis_type
 
         if vis_type == "terminal":
@@ -14,10 +14,11 @@ class Visualizer:
             self.graphical_vis()
         else:
             raise ValueError(
-                f"The visual type wanted('{vis_type}') is not provided by this programe!!"
+                f"The visual type wanted('{vis_type}') is not"
+                " provided by this programe!!"
             )
 
-    def terminal_vis(self):
+    def terminal_vis(self) -> None:
         total_turns = max(len(route) - 1 for route in self.routes)
         for turn_idx in range(1, self.max_turns + 1):
             turn_moves = []
@@ -39,5 +40,5 @@ class Visualizer:
         print(f"    Max turns ==> {total_turns}-Turns")
         print("-" * 30)
 
-    def graphical_vis(self):
+    def graphical_vis(self) -> None:
         pass

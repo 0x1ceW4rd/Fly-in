@@ -1,13 +1,19 @@
 nb_drones: 3
 
-start_hub: start 0 0 [color=green]
-hub: zb1 1 1 [color=blue zone=priority]
-hub: zb2 1 -1 [color=blue]
-hub: zb3 3 1 [color=orange max_drones=2]
-end_hub: end 4 0 [color=red]
+start_hub: start 0 1 [color=green]
+hub: zb1 1 0 [color=blue zone=restricted]
+hub: zb2 2 0 [color=blue zone=restricted]
+hub: zb3 3 0 [color=blue]
+hub: zb4 1 2 [color=blue]
+hub: zb5 2 2 [color=blue]
+hub: zb6 3 2 [color=blue zone=restricted]
+end_hub: end 4 1 [color=red]
 
 connection: start-zb1
-connection: start-zb2
-connection: zb1-zb3
+connection: zb1-zb2
 connection: zb2-zb3
 connection: zb3-end
+connection: start-zb4
+connection: zb4-zb5
+connection: zb5-zb6
+connection: zb6-end

@@ -16,7 +16,7 @@ class Zone(BaseModel):
     max_drones: int
     color: Optional[str]
     zone_type: ZoneTypes
-    connections: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    connections: Dict[str, Any] = Field(default_factory=dict)
 
     def __repr__(self) -> str:
 
@@ -27,7 +27,7 @@ class Zone(BaseModel):
 
 
 class Graph:
-    def __init__(self, np_drones):
+    def __init__(self, np_drones: int):
         self.nb_drones = np_drones
         self.start_hub: Zone
         self.zones: Dict[str, Zone] = dict()
@@ -43,12 +43,13 @@ class Graph:
 
 
 class Parser:
-    def __init__(self, map):
+    def __init__(self, map: str):
         self.map = map
         self.start_points = 0
         self.end_points = 0
 
-    def hub_data_extractor(self, line: str, the_graph: Graph) -> Dict[str, Zone]:
+    def hub_data_extractor(self, line: str,
+                           the_graph: Graph) -> Dict[str, Zone]:
         splited = line.split()
         if "start_hub:" in splited[0]:
             self.start_points += 1
@@ -60,7 +61,7 @@ class Parser:
         if "-" in zname:
             raise (ValueError("Zone name cant have '-' in it"))
 
-        zcoords = tuple((int(splited[2]), int(splited[3])))
+        zcoords = (int(splited[2]), int(splited[3]))
         zmax_drones = 1
         zcolor = None
         zzone_type = ZoneTypes.NORMAL
@@ -68,7 +69,7 @@ class Parser:
         if "[" in line:
             start = line.find("[")
             end = line.find("]")
-            zdata = line[start + 1 : end]
+            zdata = line[start + 1: end]
 
             for data in zdata.split():
                 if "color" in data:
@@ -80,17 +81,18 @@ class Parser:
                         raise (ValueError("max drones cant be negative"))
 
                 elif "zone" in data:
-                    zzone_type = data.split("=")[1].lower()
-                    if zzone_type == "normal":
+                    s = data.split("=")[1].lower()
+                    zzone_type = ZoneTypes.NORMAL
+                    if s == "normal":
                         zzone_type = ZoneTypes.NORMAL
 
-                    elif zzone_type == "restricted":
+                    elif s == "restricted":
                         zzone_type = ZoneTypes.RESTRICTED
 
-                    elif zzone_type == "priority":
+                    elif s == "priority":
                         zzone_type = ZoneTypes.PRIORITY
 
-                    elif zzone_type == "blocked":
+                    elif s == "blocked":
                         zzone_type = ZoneTypes.BLOCKED
 
                     else:
@@ -99,7 +101,8 @@ class Parser:
                 else:
                     raise (
                         ValueError(
-                            f"'{data}'is not a valid metadata for this zone({zname})"
+                            f"'{data}'is not a valid metadata "
+                            f"for this zone({zname})"
                         )
                     )
 
@@ -145,7 +148,7 @@ class Parser:
         if "[" in line:
             start = line.find("[")
             end = line.find("]")
-            zdata = line[start + 1 : end]
+            zdata = line[start + 1: end]
 
             for data in zdata.split():
                 if "max_link_capacity" in data:
@@ -153,7 +156,8 @@ class Parser:
                 else:
                     raise (
                         ValueError(
-                            f"'{data}'is not a valid metadata for this connection"
+                            f"'{data}'is not a valid "
+                            "metadata for this connection"
                         )
                     )
 
@@ -167,12 +171,13 @@ class Parser:
             )
         if to_zone in the_graph.zones[from_zone].connections:
             raise ValueError(
-                f"Duplicate connection found between '{from_zone}' and '{to_zone}'"
+                f"Duplicate connection found between "
+                f"'{from_zone}' and '{to_zone}'"
             )
         the_graph.zones[from_zone].connections[to_zone] = zmax_link_capacity
         the_graph.zones[to_zone].connections[from_zone] = zmax_link_capacity
 
-    def maping(self):
+    def maping(self) -> Graph:
 
         with open(self.map, "r") as map:
             for line in map:
@@ -187,11 +192,13 @@ class Parser:
             if "nb_drones" not in firstline:
                 raise (
                     ValueError(
-                        "The first line must define the number of drones using 'nb_drones: <positive_integer>'"
+                        "The first line must define the number of drones using"
+                        " 'nb_drones: <positive_integer>'"
                     )
                 )
             elif "-" in firstline:
-                raise (ValueError("The number of drones must be a positive integer"))
+                raise (ValueError("The number of drones must"
+                                  " be a positive integer"))
             else:
                 np_drones = int(line.split()[1])
 
@@ -205,7 +212,8 @@ class Parser:
                 # extratcting zone's data
 
                 if line.startswith(("start_hub", "hub", "end_hub")):
-                    the_graph.zones.update(self.hub_data_extractor(line, the_graph))
+                    the_graph.zones.update(self.hub_data_extractor(line,
+                                                                   the_graph))
                 elif line.startswith("connection"):
                     self.conector(line, the_graph)
 
