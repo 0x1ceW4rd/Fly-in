@@ -30,7 +30,7 @@ A compact Python simulator for experimenting with drone path planning, local col
     python3 src/main.py --map <map.txt>
     ```
 
-## Algorithm choices (brief)
+## Algorithm choices
 
 1. Space-Time Dijkstra Pathfinding:
 Standard spatial pathfinding (e.g., standard A*/Dijkstra) cannot account for dynamic obstacles like other moving drones. To solve this, pathfinding is elevated to a 3D Space-Time Graph where the algorithm searches over states defined as (zone_name, time_step).
