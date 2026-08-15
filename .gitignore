@@ -1,3 +1,5 @@
 maps/
+.mypy_cache
+*/.mypy_cache
 src/__pycache__
-test.py
+__pycache__
